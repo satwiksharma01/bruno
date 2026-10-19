@@ -472,6 +472,8 @@ const fetchGqlSchemaHandler = async (event, endpoint, environment, _request, col
 };
 
 const registerNetworkIpc = (mainWindow) => {
+  let lastResponseSaveDirectory;
+
   const onConsoleLog = (type, args) => {
     console[type](...args);
 
@@ -2257,11 +2259,12 @@ const registerNetworkIpc = (mainWindow) => {
         );
       };
 
-      const dirPath = path.dirname(pathname);
+      const dirPath = lastResponseSaveDirectory || path.dirname(pathname);
       const fileName = determineFileName();
       const filePath = await chooseFileToSave(mainWindow, path.join(dirPath, fileName));
       if (filePath && !response.dataBuffer && typeof response.storedRequestUid === 'string') {
         await saveRunnerResponseBody(response.storedRequestUid, filePath);
+        lastResponseSaveDirectory = path.dirname(filePath);
         return { success: true, filePath };
       }
       if (filePath) {
@@ -2272,6 +2275,7 @@ const registerNetworkIpc = (mainWindow) => {
         } else {
           await writeFile(filePath, data, true);
         }
+        lastResponseSaveDirectory = path.dirname(filePath);
         return { success: true, filePath };
       }
       return { success: false, cancelled: true };
